@@ -1,11 +1,15 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux'; 
+import { connect } from 'react-redux';
 import { loginUser } from '../../../redux/actions/authActions'
+
+const mapStateToProps = state => ({
+  token: state.auth.token
+})
 
 const mapActionsToProps = dispatch => ({
   commenceLogin(email, password) {
     dispatch(loginUser(email, password))
-  }
+    }
 })
 
 class LoginForm extends Component {
@@ -17,11 +21,17 @@ class LoginForm extends Component {
   login(e) {
     e.preventDefault();
     this.props.commenceLogin(this.state.email, this.state.password);
-    this.props.onLogin();
+    this.props.onLogin(); //removing this breaks login after out?
   }
 
   onChange(key, val) {
     this.setState({ [key]: val });
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps !== this.props && this.props.token !== null) {
+      this.props.onLogin();
+    }
   }
 
   render() {
@@ -43,4 +53,4 @@ class LoginForm extends Component {
   }
 }
 
-export default connect(null, mapActionsToProps)(LoginForm);
+export default connect(mapStateToProps, mapActionsToProps)(LoginForm);
