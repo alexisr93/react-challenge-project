@@ -5,6 +5,7 @@ import { SERVER_IP } from '../../private';
 import './orderForm.css';
 
 const ADD_ORDER_URL = `${SERVER_IP}/api/add-order`
+const EDIT_ORDER_URL = `${SERVER_IP}/api/edit-order`
 
 const mapStateToProps = (state) => ({
     auth: state.auth,
@@ -20,30 +21,58 @@ class OrderForm extends Component {
     }
 
     menuItemChosen(event) {
-        this.setState({ item: event.target.value });
+        this.setState({ order_item: event.target.value });
     }
 
     menuQuantityChosen(event) {
         this.setState({ quantity: event.target.value });
     }
 
-    submitOrder(event) {
-        event.preventDefault();
-        if (this.state.order_item === "") return;
-        fetch(ADD_ORDER_URL, {
+    handleFetch(URL, _body) {
+        fetch(URL, {
             method: 'POST',
-            body: JSON.stringify({
-                order_item: this.state.order_item,
-                quantity: this.state.quantity,
-                ordered_by: this.props.auth.email || 'Unknown!',
-            }),
+            body: _body,
             headers: {
                 'Content-Type': 'application/json'
             }
         })
         .then(res => res.json())
-        .then(response => console.log("Success", JSON.stringify(response)))
+        .then(response => console.log("Success: ", JSON.stringify(response)))
         .catch(error => console.error(error));
+
+    }
+
+    submitOrder(event) {
+        event.preventDefault();
+        if (this.state.order_item === "") return;
+        if (this.props.location.state) {
+            let body = JSON.stringify({
+                id: this.props.location.state.id,
+                order_item: this.state.order_item,
+                quantity: this.state.quantity,
+                ordered_by: this.props.auth.email || 'Unknown!',
+            })
+
+            this.handleFetch(EDIT_ORDER_URL, body);
+        }
+        else {
+            let body = JSON.stringify({
+                order_item: this.state.order_item,
+                quantity: this.state.quantity,
+                ordered_by: this.props.auth.email || 'Unknown!',
+            })
+
+            this.handleFetch(ADD_ORDER_URL, body);
+        }
+    }
+
+    componentDidMount() {
+      if (this.props.location.state) {
+        this.setState({
+          order_item: this.props.location.state.order_item,
+          quantity: this.props.location.state.quantity,
+        });
+      }
     }
 
     render() {
@@ -52,8 +81,8 @@ class OrderForm extends Component {
                 <div className="form-wrapper">
                     <form>
                         <label className="form-label">I'd like to order...</label><br />
-                        <select 
-                            value={this.state.order_item} 
+                        <select
+                            value={this.state.order_item}
                             onChange={(event) => this.menuItemChosen(event)}
                             className="menu-select"
                         >
